@@ -71,7 +71,7 @@
       </div>
     </div>
     <!-- 添加spu|修改spu子组件 -->
-    <spuForm v-show="scene == 1" @changeScene="changeScene"></spuForm>
+    <spuForm ref="spu" v-show="scene == 1" @changeScene="changeScene"></spuForm>
     <!-- 添加sku子组件 -->
     <skuForm v-show="scene == 2"></skuForm>
   </el-card>
@@ -101,6 +101,8 @@ let pageSize = ref<number>(3)
 let total = ref<number>(0)
 // 存储SPU数据
 let records = ref<Records>([])
+// 获取子组件SpuForm
+let spu = ref<any>()
 
 // 此方法执行:获取某一个三级分类下全部的已有SPU
 const getHasSpu = async (pager = 1) => {
@@ -135,7 +137,8 @@ const addSpu = () => {
 // 0修改已有spu按钮回调
 const updateSpu = (row: SpuData) => {
   scene.value = 1
-  // 
+  // 调用子组件实例方法,获取完整spu数据
+  spu.value.initHasSpuData(row)
 }
 // 子组件spuForm的自定义事件
 const changeScene = (num: number) => {
