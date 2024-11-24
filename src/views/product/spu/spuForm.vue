@@ -45,18 +45,31 @@
       </el-dialog>
     </el-form-item>
     <el-form-item label="spu销售属性">
-      <el-select style="width: 200px">
-        <el-option :label="1"></el-option>
-        <el-option :label="2"></el-option>
-        <el-option :label="3"></el-option>
+      <el-select
+        v-model="saleAttrIdAndValueName"
+        style="width: 200px"
+        :placeholder="
+          unSelectSaleAttr.length
+            ? `还未选择${unSelectSaleAttr.length}个`
+            : '暂无'
+        "
+      >
+        <el-option
+          :value="`${item.id}:${item.name}`"
+          v-for="item in unSelectSaleAttr"
+          :key="item.id"
+          :label="item.name"
+        ></el-option>
       </el-select>
       <el-button
         type="primary"
         size="default"
         icon="plus"
         style="margin-left: 10px"
+        :disabled="saleAttrIdAndValueName ? false : true"
+        @click="AddSaleAttr"
       >
-        添加属性值
+        添加属性
       </el-button>
       <!-- table展示销售属性与属性值的地方 -->
       <el-table border style="margin: 10px 0" :data="saleAttr">
@@ -72,18 +85,44 @@
           prop="saleAttrName"
         ></el-table-column>
         <el-table-column label="销售属性值">
-          <template #="{ row }">
+          <template #="{ row, $index }">
             <el-tag
               closable
               v-for="item in row.spuSaleAttrValueList"
               :key="row.id"
+              style="margin: 1px 5px"
+              @close="row.spuSaleAttrValueList.splice($index, 1)"
             >
               {{ item.saleAttrValueName }}
             </el-tag>
-            <el-button type="primary" size="small" icon="plus"></el-button>
+            <el-input
+              size="small"
+              placeholder="请输入属性值"
+              style="width: 100px"
+              v-if="row.flag == true"
+              v-model="row.saleAttrValue"
+              @blur="toLook(row, $index)"
+              :ref="(vc: any) => (inputArr[$index] = vc)"
+            ></el-input>
+            <el-button
+              v-else
+              @click="toEdit(row, $index)"
+              type="primary"
+              size="small"
+              icon="plus"
+            ></el-button>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120px"></el-table-column>
+        <el-table-column label="操作" width="120px">
+          <template #="{ row, $index }">
+            <el-button
+              type="primary"
+              size="small"
+              icon="delete"
+              @click="saleAttr.splice($index, 1)"
+            ></el-button>
+          </template>
+        </el-table-column>
       </el-table>
     </el-form-item>
     <el-form-item>
@@ -110,9 +149,10 @@ import type {
   SpuImage,
   SaleAttr,
   HasSaleAttr,
+  SaleAttrValue,
 } from '@/api/product/spu/type'
 import { ElMessage } from 'element-plus'
-import { ref } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 const $emit = defineEmits(['changeScene'])
 
 // 点击取消按钮,通知父组件切换场景
@@ -140,6 +180,10 @@ let SpuParams = ref<SpuData>({
   spuImageList: [],
   spuSaleAttrList: [],
 })
+// 准备一个数组,将来存储对应的组件实例el-input
+let inputArr = ref<any>([])
+// 将来收集还未选择的销售属性的id 和属性值名字
+let saleAttrIdAndValueName = ref<string>('')
 // 子组件书写一个方法
 const initHasSpuData = async (spu: SpuData) => {
   // 存储已有的spu对象,将来在模板中展示
@@ -195,6 +239,66 @@ const handleUpload = (file: any) => {
     ElMessage.error('请上传4M以下的jpeg|png|gif格式的图片')
     return false
   }
+}
+// 计算当前spu还未拥有的销售属性
+let unSelectSaleAttr = computed(() => {
+  let unSaleAtrr = allSaleAttr.value.filter((item) => {
+    return saleAttr.value.every((item1) => {
+      return item.name != item1.saleAttrName
+    })
+  })
+  return unSaleAtrr
+})
+// 添加销售属性的方法
+const AddSaleAttr = () => {
+  const [baseSaleAttrId, saleAttrName] = saleAttrIdAndValueName.value.split(':')
+  let newSaleAttr: SaleAttr = {
+    baseSaleAttrId,
+    saleAttrName,
+    spuSaleAttrValueList: [],
+  }
+  // 追加到数组当中
+  saleAttr.value.push(newSaleAttr)
+  // 情况收集的数据
+  saleAttrIdAndValueName.value = ''
+}
+// 属性值按钮的点击事件
+const toEdit = (row: SaleAttr, $index: number) => {
+  // 点击按钮,编辑模式出现
+  row.flag = true
+  // 动态添加属性
+  row.saleAttrValue = ''
+  //自动获取当前焦点
+  nextTick(() => {
+    inputArr.value[$index].focus()
+  })
+}
+// 表单元素失去焦点事件回调
+const toLook = (row: SaleAttr, $index: number) => {
+  // 整理收集的属性id和属性值名字
+  const { baseSaleAttrId, saleAttrValue } = row
+  // 整理成服务器需要的属性值格式
+  let newSaleAttrValue: SaleAttrValue = {
+    baseSaleAttrId,
+    saleAttrValueName: saleAttrValue as string,
+  }
+  // 非法情况判断
+  if ((saleAttrValue as string).trim() == '') {
+    return ElMessage.error('输入不能为空')
+  }
+  // 判断属性值是否在数组当中存在
+  let repeat = row.spuSaleAttrValueList.find((item) => {
+    return item.saleAttrValueName == saleAttrValue
+  })
+  if (repeat) {
+    return ElMessage.error('属性值不能重复')
+  }
+  row.flag = false
+  // 追加新的属性值对象
+  row.spuSaleAttrValueList.push(newSaleAttrValue)
+  // 失去焦点,查看模式出现并且清空数据
+  row.saleAttrValue = ''
+  row.flag = false
 }
 // 对外暴露
 defineExpose({ initHasSpuData })
