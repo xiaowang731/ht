@@ -126,7 +126,14 @@
       </el-table>
     </el-form-item>
     <el-form-item>
-      <el-button type="primary" size="default">保存</el-button>
+      <el-button
+        type="primary"
+        size="default"
+        @click="save"
+        :disabled="saleAttr.length > 0 ? false : true"
+      >
+        保存
+      </el-button>
       <el-button type="primary" size="default" @click="cancel">取消</el-button>
     </el-form-item>
   </el-form>
@@ -138,6 +145,7 @@ import {
   reqSpuImageList,
   reqSpuHasSaleAttr,
   reqAllSaleAttr,
+  reqAddOrUpdateSpu,
 } from '@/api/product/spu'
 import type {
   SpuData,
@@ -157,7 +165,7 @@ const $emit = defineEmits(['changeScene'])
 
 // 点击取消按钮,通知父组件切换场景
 const cancel = () => {
-  $emit('changeScene', 0)
+  $emit('changeScene', { flag: 0, params: 'update' })
 }
 // 存储已有的spu这些数据
 let AllTradeMark = ref<Trademark[]>([])
@@ -174,8 +182,8 @@ let dialogImageUrl = ref<string>('')
 // 存储已有的spu对象
 let SpuParams = ref<SpuData>({
   category3Id: '', //三级分类id
-  description: 'string', //spu描述
-  spuName: 'string', //spu名字
+  description: '', //spu描述
+  spuName: '', //spu名字
   tmId: '', //spu品牌id
   spuImageList: [],
   spuSaleAttrList: [],
@@ -300,8 +308,62 @@ const toLook = (row: SaleAttr, $index: number) => {
   row.saleAttrValue = ''
   row.flag = false
 }
+// 保存按钮的回调
+const save = async () => {
+  // 整理参数
+  // 1.照片墙数据
+  SpuParams.value.spuImageList = imgList.value.map((item: any) => {
+    return {
+      imgName: item.name,
+      imgUrl: (item.response && item.response.data) || item.url,
+    }
+  })
+  // 2.整理销售属性的数据
+  SpuParams.value.spuSaleAttrList = saleAttr.value
+  // 发请求:添加|更新
+  let result = await reqAddOrUpdateSpu(SpuParams.value)
+  if (result.code == 200) {
+    ElMessage.success(SpuParams.value.id ? '更新成功' : '添加成功')
+    // 通知父组件切换场景
+    $emit('changeScene', {
+      flag: 0,
+      params: SpuParams.value.id ? 'update' : 'add',
+    })
+  } else {
+    ElMessage.error(
+      SpuParams.value.id ? `${result.message}` : `${result.message}`,
+    )
+  }
+}
+//添加一个新的spu初始化请求方法
+const initAddSpu = async (c3Id: number | string) => {
+  // 清空数据SpuParams
+  Object.assign(SpuParams.value, {
+    category3Id: '', //三级分类id
+    description: '', //spu描述
+    spuName: '', //spu名字
+    tmId: '', //spu品牌id
+    spuImageList: [],
+    spuSaleAttrList: [],
+  })
+  // 清空照片墙
+  imgList.value = []
+  //清空销售属性
+  saleAttr.value = []
+  saleAttrIdAndValueName.value = ''
+  // 获取全部品牌的数据
+  let result: AllTradeMark = await reqAllTradeMark()
+  // 获取整个项目全部spu的销售属性
+  let result1: HasSaleAttrResponseData = await reqAllSaleAttr()
+  // 存储全部品牌的数据
+  AllTradeMark.value = result.data
+  // 存储全部的销售属性
+  allSaleAttr.value = result1.data
+  // 存储三级分类的id
+  SpuParams.value.category3Id = c3Id
+}
 // 对外暴露
-defineExpose({ initHasSpuData })
+defineExpose({ initHasSpuData, initAddSpu })
 </script>
 
 <style lang="scss" scoped></style>
