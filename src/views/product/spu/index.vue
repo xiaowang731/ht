@@ -33,7 +33,7 @@
               size="small"
               icon="Plus"
               title="添加SKU"
-              @click="addSku"
+              @click="addSku(row)"
             ></el-button>
             <el-button
               type="warning"
@@ -74,7 +74,7 @@
     <!-- 添加spu|修改spu子组件 -->
     <spuForm ref="spu" v-show="scene == 1" @changeScene="changeScene"></spuForm>
     <!-- 添加sku子组件 -->
-    <skuForm v-show="scene == 2" @changeScene="changeScene"></skuForm>
+    <skuForm ref="sku" v-show="scene == 2" @changeScene="changeScene"></skuForm>
   </el-card>
 </template>
 
@@ -104,6 +104,8 @@ let total = ref<number>(0)
 let records = ref<Records>([])
 // 获取子组件SpuForm
 let spu = ref<any>()
+// 获取子组件SkuForm
+let sku = ref<any>()
 
 // 此方法执行:获取某一个三级分类下全部的已有SPU
 const getHasSpu = async (pager = 1) => {
@@ -146,7 +148,6 @@ const updateSpu = (row: SpuData) => {
 const changeScene = (obj: any) => {
   // 子组件点击取消,返回场景0
   scene.value = obj.flag
-  console.log(obj)
   if (obj.params == 'update') {
     // 更新回到第一页
     getHasSpu(pageNo.value)
@@ -156,10 +157,14 @@ const changeScene = (obj: any) => {
   }
 }
 //添加sku按钮的回调
-const addSku = () => {
+const addSku = (row: SpuData) => {
   // 点击添加sku,切换场景为2
   scene.value = 2
+  // 调用子组件的方法获取初始化的数据
+  sku.value.initSkuData(categoryStore.c1Id, categoryStore.c2Id, row)
 }
+
+//
 </script>
 
 <style lang="scss" scoped></style>
