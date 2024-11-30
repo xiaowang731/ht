@@ -32,7 +32,8 @@
               type="primary"
               size="small"
               icon="Plus"
-              title="添加SPU"
+              title="添加SKU"
+              @click="addSku"
             ></el-button>
             <el-button
               type="warning"
@@ -73,7 +74,7 @@
     <!-- 添加spu|修改spu子组件 -->
     <spuForm ref="spu" v-show="scene == 1" @changeScene="changeScene"></spuForm>
     <!-- 添加sku子组件 -->
-    <skuForm v-show="scene == 2"></skuForm>
+    <skuForm v-show="scene == 2" @changeScene="changeScene"></skuForm>
   </el-card>
 </template>
 
@@ -153,6 +154,11 @@ const changeScene = (obj: any) => {
     // 添加回到第一页
     getHasSpu()
   }
+}
+//添加sku按钮的回调
+const addSku = () => {
+  // 点击添加sku,切换场景为2
+  scene.value = 2
 }
 </script>
 
