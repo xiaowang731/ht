@@ -26,7 +26,7 @@
           prop="description"
           show-overflow-tooltip
         ></el-table-column>
-        <el-table-column label="SPU操作">
+        <el-table-column label="SPU操作" width="210px">
           <template #="{ row, $index }">
             <el-button
               type="primary"
