@@ -32,7 +32,8 @@ export interface Attr {
     attrName: string,
     categoryId: number | string,
     categoryLevel: number,
-    attrValueList: AttrValueList
+    attrValueList: AttrValueList,
+    attrIdAndValueId?: string
 }
 // 存储每一个属性对象的ts类型
 export type AttrList = Attr[]

@@ -208,6 +208,7 @@ const save = async () => {
   }
   scene.value = 0
 }
+
 // 删除某一个已有属性方法
 const deleteAttr = async (attrId: number) => {
   let result = await reqRemoveAttr(attrId)

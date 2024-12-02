@@ -16,6 +16,8 @@
     "DELETEREADEMARK",
     "HASSPU",
     "popconfirm",
+    "REMOVESPU",
+    "SKUINFO",
     "SPUHASSALEATTR",
     "UPDATESPU",
     "UPDATETRADEMARK"
