@@ -16,6 +16,7 @@
     "Cansel",
     "DELETEATTR",
     "DELETEREADEMARK",
+    "DELETESKU",
     "HASSPU",
     "popconfirm",
     "REMOVESPU",
